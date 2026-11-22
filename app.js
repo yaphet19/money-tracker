@@ -37,3 +37,5 @@ $('#tabs').addEventListener('click', ev => {
   if (t) ctx.go(t.dataset.tab);
 });
 render();
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
