@@ -74,9 +74,13 @@ export function debtTotals(state) {
 let counter = 0;
 export const uid = () => Date.now().toString(36) + (counter++).toString(36) + Math.random().toString(36).slice(2, 6);
 
+// Whole days from `today` to `due` (both 'YYYY-MM-DD'); negative when late. Rounding absorbs DST hours.
+export const daysUntil = (due, today) =>
+  Math.round((new Date(due + 'T00:00:00') - new Date(today + 'T00:00:00')) / 864e5);
+
 // With moveMoney, also records the wallet entry that opened the loan (lend = out, borrow = in).
-export function addDebt(state, { direction, person, amount, note = '', date, moveMoney, wallet }) {
-  const debt = { id: uid(), direction, person, amount, note, createdDate: date };
+export function addDebt(state, { direction, person, amount, note = '', date, dueDate = null, moveMoney, wallet }) {
+  const debt = { id: uid(), direction, person, amount, note, createdDate: date, dueDate };
   state.debts.push(debt);
   if (moveMoney) {
     state.entries.push({ id: uid(), date, type: direction === 'owedToMe' ? 'out' : 'in', amount, wallet, person, note: 'Loan', debtId: debt.id });

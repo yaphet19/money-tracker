@@ -102,6 +102,22 @@ test('deleteDebt keeps its entries, still out of the totals', () => {
   assert.equal(L.periodTotals(s.entries, '2026-11-22', '2026-11-22').out, 0);
 });
 
+test('daysUntil: future, today, late, across months', () => {
+  assert.equal(L.daysUntil('2026-11-25', '2026-11-22'), 3);
+  assert.equal(L.daysUntil('2026-11-22', '2026-11-22'), 0);
+  assert.equal(L.daysUntil('2026-11-20', '2026-11-22'), -2);
+  assert.equal(L.daysUntil('2026-12-01', '2026-11-30'), 1);
+  assert.equal(L.daysUntil('2027-03-29', '2027-03-27'), 2); // a 23-hour DST day in some zones
+});
+
+test('addDebt keeps the pay-back date (or null)', () => {
+  const s = st();
+  const a = L.addDebt(s, { direction: 'iOwe', person: 'A', amount: 10, date: '2026-11-22', dueDate: '2026-12-01', moveMoney: false });
+  const b = L.addDebt(s, { direction: 'iOwe', person: 'B', amount: 10, date: '2026-11-22', moveMoney: false });
+  assert.equal(a.dueDate, '2026-12-01');
+  assert.equal(b.dueDate, null);
+});
+
 test('isValidBackup', () => {
   assert.equal(L.isValidBackup(L.emptyState()), true);
   assert.equal(L.isValidBackup(null), false);

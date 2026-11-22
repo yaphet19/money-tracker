@@ -1,23 +1,30 @@
 import { balances, debtRemaining, debtTotals, periodStart, periodTotals, round2 } from '../logic.js';
-import { esc, fmt, signed, today, WALLETS } from '../ui.js';
+import { dueText, esc, fmt, signed, today, WALLETS } from '../ui.js';
 import { openEntryForm } from './entry-form.js';
 
 const PERIODS = { day: 'Today', week: 'This week', month: 'This month' };
 const expanded = new Set(); // periods whose "from who" lists are open; kept across re-renders
 
-const people = (obj, empty = 'Nothing yet') => Object.entries(obj).sort((a, b) => b[1] - a[1])
+const people = obj => Object.entries(obj).sort((a, b) => b[1] - a[1])
   .map(([who, n]) => `<li><span>${esc(who)}</span><span>${fmt(n)}</span></li>`).join('')
-  || `<li class="muted">${empty}</li>`;
+  || '<li class="muted">Nothing yet</li>';
 
-// What is still open per person, so two loans to the same person show as one line.
-function openDebtsByPerson(state, direction) {
+// One line per person (two loans to the same person add up), with their soonest pay-back date.
+// Soonest date first; people with no date after, biggest amount first.
+function openDebtsList(state, direction) {
   const by = {};
   for (const d of state.debts) {
     if (d.direction !== direction) continue;
     const left = debtRemaining(d, state.entries);
-    if (left > 0) by[d.person] = round2((by[d.person] || 0) + left);
+    if (left <= 0) continue;
+    const p = (by[d.person] ||= { left: 0, due: null });
+    p.left = round2(p.left + left);
+    if (d.dueDate && (!p.due || d.dueDate < p.due)) p.due = d.dueDate;
   }
-  return by;
+  return Object.entries(by)
+    .sort(([, a], [, b]) => (a.due || '9999').localeCompare(b.due || '9999') || b.left - a.left)
+    .map(([who, p]) => `<li><span>${esc(who)}${p.due ? `<br>${dueText(p.due)}` : ''}</span><span>${fmt(p.left)}</span></li>`).join('')
+    || '<li class="muted">Nobody</li>';
 }
 
 function periodCard(state, key, label) {
@@ -53,9 +60,9 @@ export default {
       ${Object.entries(PERIODS).map(([k, v]) => periodCard(state, k, v)).join('')}
       <section class="card loans">
         <h3>People owe you <span class="pos">${fmt(d.owedToMe)}</span></h3>
-        <ul class="list">${people(openDebtsByPerson(state, 'owedToMe'), 'Nobody')}</ul>
+        <ul class="list">${openDebtsList(state, 'owedToMe')}</ul>
         <h3>You owe <span class="neg">${fmt(d.iOwe)}</span></h3>
-        <ul class="list">${people(openDebtsByPerson(state, 'iOwe'), 'Nobody')}</ul>
+        <ul class="list">${openDebtsList(state, 'iOwe')}</ul>
         <button data-go="debts">Open Debts</button>
       </section>
       <div class="fab">

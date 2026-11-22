@@ -1,4 +1,4 @@
-import { balances, ymd } from './logic.js';
+import { balances, daysUntil, ymd } from './logic.js';
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -6,6 +6,15 @@ export const fmt = n => n.toLocaleString('en-US', { maximumFractionDigits: 2 });
 export const signed = n => (n > 0 ? '+' : n < 0 ? '−' : '') + fmt(Math.abs(n));
 export const today = () => ymd(new Date());
 export const WALLETS = { cash: 'Cash', telebirr: 'Telebirr' };
+// "due 5 Dec · in 3 days" / "· today" / "· 2 days late"; red when late, amber within 3 days.
+export function dueText(due) {
+  if (!due) return '';
+  const n = daysUntil(due, today());
+  const date = new Date(due + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  const when = n === 0 ? 'today' : n === 1 ? 'tomorrow' : n > 1 ? `in ${n} days` : `${-n} day${n === -1 ? '' : 's'} late`;
+  return `<small class="${n < 0 ? 'neg' : n <= 3 ? 'soon' : ''}">due ${date} · ${when}</small>`;
+}
+
 export const walletOptions = selected =>
   Object.entries(WALLETS).map(([k, v]) => `<option value="${k}" ${k === selected ? 'selected' : ''}>${v}</option>`).join('');
 

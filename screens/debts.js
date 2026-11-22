@@ -1,5 +1,5 @@
 import { addDebt, debtRemaining, deleteDebt, parseAmount, repay, round2 } from '../logic.js';
-import { $, ask, esc, fmt, openForm, today, walletOptions, warnIfNegative } from '../ui.js';
+import { $, ask, dueText, esc, fmt, openForm, today, walletOptions, warnIfNegative } from '../ui.js';
 
 const TITLE = { owedToMe: 'People who owe me', iOwe: 'People I owe' };
 const BAD_AMOUNT = 'Enter an amount above 0 (at most 2 decimals).';
@@ -8,6 +8,7 @@ function row(d, left) {
   return `<li class="debt"><div>
       <strong>${esc(d.person)}</strong> ${fmt(left)}${left !== d.amount ? ` <small>of ${fmt(d.amount)}</small>` : ''}
       ${d.note ? `<br><small>${esc(d.note)}</small>` : ''}<br><small>since ${d.createdDate}</small>
+      ${left > 0 && d.dueDate ? `<br>${dueText(d.dueDate)}` : ''}
     </div><div class="row">
       ${left > 0 ? `<button data-pay="${d.id}" class="primary">Paid</button>` : ''}<button data-edit="${d.id}">Edit</button>
     </div></li>`;
@@ -15,7 +16,8 @@ function row(d, left) {
 
 function section(state, dir) {
   const list = state.debts.filter(d => d.direction === dir).map(d => [d, debtRemaining(d, state.entries)]);
-  const open = list.filter(([, left]) => left > 0);
+  // soonest pay-back date first; debts without a date after them
+  const open = list.filter(([, left]) => left > 0).sort(([a], [b]) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999'));
   const settled = list.filter(([, left]) => left <= 0);
   const total = round2(open.reduce((s, [, left]) => s + left, 0));
   return `<section class="card"><h3>${TITLE[dir]} <span>${fmt(total)}</span></h3>
@@ -32,13 +34,14 @@ function newDebt(ctx, direction) {
     <label>Note <input name="note" autocomplete="off"></label>
     <label class="check"><input type="checkbox" name="move" checked> ${owed ? 'Money left my wallet' : 'Money entered my wallet'}</label>
     <label>Wallet <select name="wallet">${walletOptions('cash')}</select></label>
-    <label>Date <input name="date" type="date" required value="${today()}"></label>`,
+    <label>Date <input name="date" type="date" required value="${today()}"></label>
+    <label>${owed ? 'They pay me back by' : 'I pay back by'} (optional) <input name="due" type="date"></label>`,
     fd => {
       const amount = parseAmount(fd.get('amount'));
       if (!amount) return BAD_AMOUNT;
       const person = fd.get('person').trim();
       if (!person) return 'Enter a name.';
-      addDebt(ctx.state, { direction, person, amount, note: fd.get('note').trim(), date: fd.get('date'), moveMoney: fd.get('move') === 'on', wallet: fd.get('wallet') });
+      addDebt(ctx.state, { direction, person, amount, note: fd.get('note').trim(), date: fd.get('date'), dueDate: fd.get('due') || null, moveMoney: fd.get('move') === 'on', wallet: fd.get('wallet') });
       warnIfNegative(ctx.state);
       ctx.commit();
     });
@@ -66,14 +69,15 @@ function edit(ctx, debt) {
   const form = openForm('Edit debt', `
     <label>Person <input name="person" required value="${esc(debt.person)}" autocomplete="off"></label>
     <label>Amount (birr) <input name="amount" inputmode="decimal" required value="${debt.amount}" autocomplete="off"></label>
-    <label>Note <input name="note" value="${esc(debt.note)}" autocomplete="off"></label>`,
+    <label>Note <input name="note" value="${esc(debt.note)}" autocomplete="off"></label>
+    <label>Pay back by (optional) <input name="due" type="date" value="${debt.dueDate || ''}"></label>`,
     fd => {
       const amount = parseAmount(fd.get('amount'));
       if (!amount) return BAD_AMOUNT;
       if (amount < paid) return `${fmt(paid)} is already paid back, so the amount can't be less.`;
       const person = fd.get('person').trim();
       if (!person) return 'Enter a name.';
-      Object.assign(debt, { person, amount, note: fd.get('note').trim() });
+      Object.assign(debt, { person, amount, note: fd.get('note').trim(), dueDate: fd.get('due') || null });
       ctx.commit();
     },
     '<button type="button" class="danger" data-del>Delete</button>');
