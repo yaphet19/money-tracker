@@ -13,13 +13,11 @@ function periodCard(state, key, label) {
   const t = periodTotals(state.entries, periodStart(key, today()), today());
   return `<details class="card period" data-period="${key}" ${expanded.has(key) ? 'open' : ''}>
     <summary>
-      <div class="pline">
-        <strong>${label}</strong>
-        <strong class="neg" aria-label="lost">−${fmt(t.out)}</strong>
-        <strong class="pos" aria-label="got">+${fmt(t.in)}</strong>
-        <span class="chev" aria-hidden="true">▾</span>
+      <h3>${label} <small>net <span class="${t.net < 0 ? 'neg' : 'pos'}">${signed(t.net)}</span> <span class="chev" aria-hidden="true">▾</span></small></h3>
+      <div class="split">
+        <div class="lost"><strong>−${fmt(t.out)}</strong><small>lost</small></div>
+        <div class="got"><strong>+${fmt(t.in)}</strong><small>got</small></div>
       </div>
-      <small>net <span class="${t.net < 0 ? 'neg' : 'pos'}">${signed(t.net)}</span> · tap to see who</small>
     </summary>
     <h4>Got from</h4><ul class="list">${people(t.byPersonIn)}</ul>
     <h4>Lost to</h4><ul class="list">${people(t.byPersonOut)}</ul>
