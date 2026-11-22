@@ -2,10 +2,12 @@ import { load, save } from './store.js';
 import { $ } from './ui.js';
 import home from './screens/home.js';
 import history from './screens/history.js';
+import debts from './screens/debts.js';
 
 const tabs = [
   ['home', 'Home', home],
   ['history', 'History', history],
+  ['debts', 'Debts', debts],
 ];
 let current = 'home';
 
