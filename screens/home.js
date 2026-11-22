@@ -16,8 +16,8 @@ export default {
     const d = debtTotals(state);
     return `
       <section class="card balances">
-        ${Object.entries(WALLETS).map(([k, v]) => `<div><small>${v}</small><strong class="${b[k] < 0 ? 'neg' : ''}">${fmt(b[k])}</strong></div>`).join('')}
-        <div><small>Total</small><strong>${fmt(b.total)}</strong></div>
+        <div class="total"><small>Total</small><strong class="${b.total < 0 ? 'neg' : ''}">${fmt(b.total)}</strong></div>
+        ${['telebirr', 'cash'].map(k => `<div><small>${WALLETS[k]}</small><strong class="${b[k] < 0 ? 'neg' : ''}">${fmt(b[k])}</strong></div>`).join('')}
       </section>
       <div class="seg">${Object.entries(PERIODS).map(([k, v]) =>
         `<button data-period="${k}" aria-pressed="${k === period}">${v}</button>`).join('')}</div>

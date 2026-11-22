@@ -23,6 +23,9 @@ small, .muted { color: var(--muted); }
 .pos { color: var(--pos); }
 .neg { color: var(--neg); }
 .balances, .totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.balances { grid-template-columns: 1fr 1fr; }
+.balances .total { grid-column: 1 / -1; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.balances .total strong { font-size: 32px; }
 .balances strong, .totals strong { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
 .seg { display: flex; gap: 6px; }
 .seg button { flex: 1; padding: 8px; }
