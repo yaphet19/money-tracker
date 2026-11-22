@@ -42,7 +42,13 @@ export default {
     return `
       <section class="card balances">
         <div class="total"><small>Total</small><strong class="${b.total < 0 ? 'neg' : ''}">${fmt(b.total)}</strong></div>
-        ${['telebirr', 'cash'].map(k => `<div><small>${WALLETS[k]}</small><strong class="${b[k] < 0 ? 'neg' : ''}">${fmt(b[k])}</strong></div>`).join('')}
+        ${['telebirr', 'cash'].map(k => {
+          // moves carry no `wallet`, so this filter leaves them out, like the other totals
+          const w = periodTotals(state.entries.filter(e => e.wallet === k), today(), today());
+          return `<div><small>${WALLETS[k]}</small><strong class="${b[k] < 0 ? 'neg' : ''}">${fmt(b[k])}</strong>
+            <div class="split mini"><div class="lost" aria-label="${WALLETS[k]} out today">−${fmt(w.out)}</div><div class="got" aria-label="${WALLETS[k]} in today">+${fmt(w.in)}</div></div></div>`;
+        }).join('')}
+        <small class="today-note">− and + are today</small>
       </section>
       ${Object.entries(PERIODS).map(([k, v]) => periodCard(state, k, v)).join('')}
       <section class="card loans">

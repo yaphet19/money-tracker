@@ -34,6 +34,9 @@ small, .muted { color: var(--muted); }
 .split strong { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
 .split .lost { background: var(--neg-bg); color: var(--neg); }
 .split .got { background: var(--pos-bg); color: var(--pos); }
+.split.mini { gap: 4px; margin-top: 6px; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.split.mini div { padding: 4px 2px; border-radius: 8px; }
+.today-note { grid-column: 1 / -1; font-size: 12px; }
 .period .chev { color: var(--muted); transition: transform .15s; }
 .period[open] .chev { transform: rotate(180deg); }
 .period h4 { margin: 12px 0 0; font-size: 14px; color: var(--muted); }
