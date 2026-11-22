@@ -22,15 +22,16 @@ small, .muted { color: var(--muted); }
 .center { text-align: center; margin-top: 40px; }
 .pos { color: var(--pos); }
 .neg { color: var(--neg); }
-.balances, .totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
-.balances { grid-template-columns: 1fr 1fr; }
+.balances { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: center; }
 .balances .total { grid-column: 1 / -1; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
 .balances .total strong { font-size: 32px; }
-.balances strong, .totals strong { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+.balances strong { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
 .period summary { list-style: none; cursor: pointer; }
 .period summary::-webkit-details-marker { display: none; }
-.period .chev { font-weight: 400; }
-.period[open] .chev { visibility: hidden; }
+.pline { display: grid; grid-template-columns: 1fr auto auto 16px; gap: 14px; align-items: baseline; font-size: 18px; font-variant-numeric: tabular-nums; }
+.pline strong:first-child { color: var(--text); }
+.period .chev { color: var(--muted); transition: transform .15s; }
+.period[open] .chev { transform: rotate(180deg); }
 .period h4 { margin: 12px 0 0; font-size: 14px; color: var(--muted); }
 .list { list-style: none; margin: 0; padding: 0; }
 .list li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); }
