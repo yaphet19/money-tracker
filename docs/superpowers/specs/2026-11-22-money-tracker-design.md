@@ -38,18 +38,20 @@ Single user, English only, Gregorian dates, week starts Monday.
 - **Debt**: `{ id, direction: "owedToMe" | "iOwe", person, amount, note, createdDate }`. What is left = `amount` − the repayments linked to it.
 - **To-do**: `{ id, text, createdDate, doneDate? }`
 
-## Loans count in the totals
+## Loans are their own thing
 
-At the owner's request, lending and borrowing show up as gains and losses:
+Lending, borrowing and repayments change the wallet balances but **never** count in the + got / − lost totals. Loans are tracked separately, on the Debts screen and on the Home loans card.
 
-| What happens | Wallet | Counts as |
+| What happens | Wallet | In +/− totals? |
 |---|---|---|
-| I lend someone money | goes down | **−** (out, linked to a new "owes me" debt) |
-| They pay me back (all or part) | goes up | **+** (in, linked to that debt) |
-| I borrow from someone | goes up | **+** (in, linked to a new "I owe" debt) |
-| I pay them back (all or part) | goes down | **−** (out, linked to that debt) |
+| I lend someone money | goes down | no (entry linked to a new "owes me" debt) |
+| They pay me back (all or part) | goes up | no (entry linked to that debt) |
+| I borrow from someone | goes up | no (entry linked to a new "I owe" debt) |
+| I pay them back (all or part) | goes down | no (entry linked to that debt) |
 
-A debt can also be recorded **without moving money**, for example when someone owes for goods given on credit. A "Money left / entered my wallet" toggle, on by default, controls this. With the toggle off, only the debt is saved, with no entry and no effect on the totals.
+Rule: an entry with a `debtId` changes its wallet balance but is left out of the period totals and of the per-person breakdown.
+
+A debt can also be recorded **without moving money**, for example when someone owes for goods given on credit. A "Money left / entered my wallet" toggle, on by default, controls this. With the toggle off, only the debt is saved and no wallet changes.
 
 ## Screens
 
@@ -57,6 +59,7 @@ A debt can also be recorded **without moving money**, for example when someone o
    - Cash and Telebirr balances, and their total.
    - **Today / This week / This month** tabs, each showing **+ got**, **− lost** and **net**.
    - A breakdown by person under + and −, for example "Abebe +200, Sara +155". Entries with no person are grouped as "Other".
+   - A separate **Loans** card: "People owe you X" and "You owe Y". Tapping it opens Debts.
    - Big **+** and **−** buttons to add an entry quickly.
 2. **History**: every entry, newest first, grouped by day. Tap an entry to edit or delete it.
 3. **Debts**: two lists, *owe me* and *I owe*, each with its total. Each debt shows what is left and has **Paid** (with an amount, partial allowed, and a wallet) and **Edit/Delete** buttons. Paid-off debts move to a collapsed "settled" section.
