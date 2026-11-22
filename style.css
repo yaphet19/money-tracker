@@ -44,7 +44,8 @@ small, .muted { color: var(--muted); }
 .entry.in strong { color: var(--pos); }
 .entry.out strong { color: var(--neg); }
 .tag { font-style: normal; font-size: 12px; background: var(--line); padding: 1px 6px; border-radius: 6px; }
-.loans { width: 100%; justify-content: space-between; gap: 8px; text-align: left; }
+.loans h3:not(:first-child) { margin-top: 16px; }
+.loans button { width: 100%; margin-top: 10px; }
 .fab { position: fixed; right: 16px; bottom: calc(env(safe-area-inset-bottom) + 68px); display: flex; gap: 10px; }
 .fab button { width: 56px; height: 56px; border-radius: 50%; font-size: 26px; background: var(--accent); color: #fff; border: 0; box-shadow: 0 4px 12px #0003; }
 .row { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }

@@ -1,13 +1,24 @@
-import { balances, debtTotals, periodStart, periodTotals } from '../logic.js';
+import { balances, debtRemaining, debtTotals, periodStart, periodTotals, round2 } from '../logic.js';
 import { esc, fmt, signed, today, WALLETS } from '../ui.js';
 import { openEntryForm } from './entry-form.js';
 
 const PERIODS = { day: 'Today', week: 'This week', month: 'This month' };
 const expanded = new Set(); // periods whose "from who" lists are open; kept across re-renders
 
-const people = obj => Object.entries(obj).sort((a, b) => b[1] - a[1])
+const people = (obj, empty = 'Nothing yet') => Object.entries(obj).sort((a, b) => b[1] - a[1])
   .map(([who, n]) => `<li><span>${esc(who)}</span><span>${fmt(n)}</span></li>`).join('')
-  || '<li class="muted">Nothing yet</li>';
+  || `<li class="muted">${empty}</li>`;
+
+// What is still open per person, so two loans to the same person show as one line.
+function openDebtsByPerson(state, direction) {
+  const by = {};
+  for (const d of state.debts) {
+    if (d.direction !== direction) continue;
+    const left = debtRemaining(d, state.entries);
+    if (left > 0) by[d.person] = round2((by[d.person] || 0) + left);
+  }
+  return by;
+}
 
 function periodCard(state, key, label) {
   const t = periodTotals(state.entries, periodStart(key, today()), today());
@@ -34,10 +45,13 @@ export default {
         ${['telebirr', 'cash'].map(k => `<div><small>${WALLETS[k]}</small><strong class="${b[k] < 0 ? 'neg' : ''}">${fmt(b[k])}</strong></div>`).join('')}
       </section>
       ${Object.entries(PERIODS).map(([k, v]) => periodCard(state, k, v)).join('')}
-      <button class="card loans" data-go="debts">
-        <span><small>People owe you</small><br><strong>${fmt(d.owedToMe)}</strong></span>
-        <span><small>You owe</small><br><strong>${fmt(d.iOwe)}</strong></span>
-      </button>
+      <section class="card loans">
+        <h3>People owe you <span class="pos">${fmt(d.owedToMe)}</span></h3>
+        <ul class="list">${people(openDebtsByPerson(state, 'owedToMe'), 'Nobody')}</ul>
+        <h3>You owe <span class="neg">${fmt(d.iOwe)}</span></h3>
+        <ul class="list">${people(openDebtsByPerson(state, 'iOwe'), 'Nobody')}</ul>
+        <button data-go="debts">Open Debts</button>
+      </section>
       <div class="fab">
         <button data-add="out" aria-label="Add money spent or lost">−</button>
         <button data-add="move" aria-label="Move money between wallets">⇄</button>
