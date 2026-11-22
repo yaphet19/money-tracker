@@ -71,14 +71,14 @@ A debt can also be recorded **without moving money**, for example when someone o
 - Amounts are whole birr or have 2 decimals at most. They must be greater than 0, and the app checks this before saving.
 - A balance may go negative (the app warns but still allows it), so a mistake never blocks entering the real situation.
 - A repayment larger than what is left on the debt is refused.
-- Deleting a debt that has repayments asks first. Its linked entries are kept, but they lose the link.
+- Deleting a debt always asks first. Its linked entries stay in History and keep their link, so they still move the wallets and stay out of the +/− totals.
 - Editing an entry's date moves it to the right day, week and month.
 - Restore checks that the file is a valid backup before it replaces anything.
 
 ## Tech
 
 - Plain HTML, CSS and JS with no framework and no build step: `index.html`, `app.js`, `style.css`, `manifest.json`, `sw.js` (offline cache) and an icon.
-- The totals logic (balances, period sums, debt remaining) lives in pure functions, covered by a small assert-based self-test page (`test.html`).
+- The totals logic (balances, period sums, debt remaining) lives in pure functions in `logic.js`, covered by `node --test` tests (`logic.test.js`).
 
 ## Not in v1
 
