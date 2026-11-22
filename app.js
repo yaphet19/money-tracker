@@ -4,12 +4,14 @@ import home from './screens/home.js';
 import history from './screens/history.js';
 import debts from './screens/debts.js';
 import todo from './screens/todo.js';
+import settings from './screens/settings.js';
 
 const tabs = [
   ['home', 'Home', home],
   ['history', 'History', history],
   ['debts', 'Debts', debts],
   ['todo', 'To-do', todo],
+  ['settings', 'Settings', settings],
 ];
 let current = 'home';
 
