@@ -71,6 +71,29 @@ export function debtTotals(state) {
   return { owedToMe: round2(t.owedToMe), iOwe: round2(t.iOwe) };
 }
 
+// "Can I lend `amount`?" Yes when the money left after lending still covers everything I owe.
+export function lendCheck(state, amount) {
+  const total = balances(state).total;
+  const owe = debtTotals(state).iOwe;
+  const left = round2(total - amount - owe);
+  return { ok: left >= 0, total, owe, left };
+}
+
+// "Can I borrow `amount` and pay it back by `by`?" Have = my money now + loans owed to me that are due by then.
+// Need = this loan + what I owe by then; a debt of mine with no date counts as due (safer guess).
+export function borrowCheck(state, amount, by) {
+  let incoming = 0, outgoing = 0;
+  for (const d of state.debts) {
+    const left = debtRemaining(d, state.entries);
+    if (left <= 0) continue;
+    if (d.direction === 'owedToMe' && d.dueDate && d.dueDate <= by) incoming += left;
+    if (d.direction === 'iOwe' && (!d.dueDate || d.dueDate <= by)) outgoing += left;
+  }
+  const have = round2(balances(state).total + incoming);
+  const need = round2(amount + outgoing);
+  return { ok: have >= need, have, need, incoming: round2(incoming), outgoing: round2(outgoing), short: round2(need - have) };
+}
+
 let counter = 0;
 export const uid = () => Date.now().toString(36) + (counter++).toString(36) + Math.random().toString(36).slice(2, 6);
 

@@ -118,6 +118,25 @@ test('addDebt keeps the pay-back date (or null)', () => {
   assert.equal(b.dueDate, null);
 });
 
+test('lendCheck: still covers what I owe, or not', () => {
+  const s = st(); s.start = { cash: 3000, telebirr: 2000 };
+  L.addDebt(s, { direction: 'iOwe', person: 'Dawit', amount: 1000, date: '2026-11-22', moveMoney: false });
+  assert.deepEqual(L.lendCheck(s, 3000), { ok: true, total: 5000, owe: 1000, left: 1000 });
+  assert.deepEqual(L.lendCheck(s, 4500), { ok: false, total: 5000, owe: 1000, left: -500 });
+});
+
+test('borrowCheck: counts money due to me by then, and what I owe by then or with no date', () => {
+  const s = st(); s.start = { cash: 4200, telebirr: 0 };
+  L.addDebt(s, { direction: 'owedToMe', person: 'Meron', amount: 900, date: '2026-11-22', dueDate: '2026-12-10', moveMoney: false });
+  L.addDebt(s, { direction: 'owedToMe', person: 'Late', amount: 700, date: '2026-11-22', dueDate: '2027-01-15', moveMoney: false });
+  L.addDebt(s, { direction: 'owedToMe', person: 'Undated', amount: 600, date: '2026-11-22', moveMoney: false });
+  L.addDebt(s, { direction: 'iOwe', person: 'Dawit', amount: 300, date: '2026-11-22', moveMoney: false });
+  L.addDebt(s, { direction: 'iOwe', person: 'Later', amount: 999, date: '2026-11-22', dueDate: '2027-02-01', moveMoney: false });
+  assert.deepEqual(L.borrowCheck(s, 5000, '2026-12-20'),
+    { ok: false, have: 5100, need: 5300, incoming: 900, outgoing: 300, short: 200 });
+  assert.equal(L.borrowCheck(s, 4800, '2026-12-20').ok, true);
+});
+
 test('isValidBackup', () => {
   assert.equal(L.isValidBackup(L.emptyState()), true);
   assert.equal(L.isValidBackup(null), false);
