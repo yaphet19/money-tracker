@@ -25,8 +25,29 @@ export function openForm(title, fieldsHtml, onSubmit, extraButtons = '') {
   return form;
 }
 
+// In-page stand-ins for alert/confirm: embedded previews block native dialogs, and on iPhone they show the site address.
+export function notify(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.hidden = false;
+  clearTimeout(notify.timer);
+  notify.timer = setTimeout(() => { t.hidden = true; }, 4000);
+}
+
+export function ask(msg, yes = 'Delete') {
+  const dlg = $('#ask');
+  dlg.innerHTML = `<form method="dialog"><p>${esc(msg)}</p>
+    <div class="actions"><button value="yes" class="primary">${esc(yes)}</button><button value="no">Cancel</button></div></form>`;
+  dlg.showModal();
+  // Answer from the button's submit, not the dialog's 'close' event, which some embedded browsers never fire.
+  return new Promise(resolve => {
+    $('form', dlg).addEventListener('submit', ev => resolve(ev.submitter?.value === 'yes'));
+    dlg.addEventListener('cancel', () => resolve(false), { once: true });
+  });
+}
+
 export function warnIfNegative(state) {
   const b = balances(state);
   const low = Object.keys(WALLETS).filter(k => b[k] < 0).map(k => WALLETS[k]);
-  if (low.length) alert(`Heads up: ${low.join(' and ')} is now below 0.`);
+  if (low.length) notify(`Heads up: ${low.join(' and ')} is now below 0.`);
 }

@@ -1,5 +1,5 @@
 import { parseAmount, uid } from '../logic.js';
-import { $, esc, openForm, today, walletOptions, warnIfNegative } from '../ui.js';
+import { $, ask, esc, openForm, today, walletOptions, warnIfNegative } from '../ui.js';
 
 const TITLES = { in: 'Got money', out: 'Spent / lost money', move: 'Move money' };
 
@@ -30,8 +30,8 @@ export function openEntryForm(ctx, type, entry) {
       ctx.commit();
     },
     entry ? '<button type="button" class="danger" data-del>Delete</button>' : '');
-  $('[data-del]', form)?.addEventListener('click', () => {
-    if (!confirm('Delete this entry?')) return;
+  $('[data-del]', form)?.addEventListener('click', async () => {
+    if (!(await ask('Delete this entry?'))) return;
     ctx.state.entries = ctx.state.entries.filter(x => x !== entry);
     $('#dlg').close();
     ctx.commit();

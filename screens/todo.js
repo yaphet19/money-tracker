@@ -1,5 +1,5 @@
 import { uid } from '../logic.js';
-import { esc, today } from '../ui.js';
+import { ask, esc, today } from '../ui.js';
 
 const item = t => `<li class="todo">
   <label><input type="checkbox" data-toggle="${t.id}" ${t.doneDate ? 'checked' : ''}>
@@ -29,9 +29,9 @@ export default {
       t.doneDate = t.doneDate ? null : today();
       ctx.commit();
     });
-    root.addEventListener('click', ev => {
+    root.addEventListener('click', async ev => {
       const id = ev.target.closest('[data-del]')?.dataset.del;
-      if (!id || !confirm('Delete this to-do?')) return;
+      if (!id || !(await ask('Delete this to-do?'))) return;
       ctx.state.todos = ctx.state.todos.filter(x => x.id !== id);
       ctx.commit();
     });

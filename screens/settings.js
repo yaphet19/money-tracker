@@ -1,5 +1,5 @@
 import { parseAmount } from '../logic.js';
-import { today, WALLETS } from '../ui.js';
+import { ask, notify, today, WALLETS } from '../ui.js';
 import { exportBackup, readBackup } from '../store.js';
 
 export default {
@@ -32,17 +32,17 @@ export default {
     root.querySelector('[data-backup]').addEventListener('click', async () => {
       try {
         if (await exportBackup(ctx.state, today())) { ctx.state.lastBackup = today(); ctx.commit(); }
-      } catch (err) { alert(`Backup failed: ${err.message}`); }
+      } catch (err) { notify(`Backup failed: ${err.message}`); }
     });
     root.querySelector('[data-restore]').addEventListener('change', async ev => {
       const file = ev.target.files[0];
       if (!file) return;
       try {
         const s = await readBackup(file);
-        if (!confirm(`Replace ALL current data with this backup (${s.entries.length} entries, ${s.debts.length} debts, ${s.todos.length} to-dos)?`)) return;
+        if (!(await ask(`Replace ALL current data with this backup (${s.entries.length} entries, ${s.debts.length} debts, ${s.todos.length} to-dos)?`, 'Replace'))) return;
         ctx.state = s;
         ctx.commit();
-      } catch (err) { alert(err.message); }
+      } catch (err) { notify(err.message); }
     });
   },
 };

@@ -38,4 +38,4 @@ $('#tabs').addEventListener('click', ev => {
 });
 render();
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {}); // refused in embedded previews; the app still works online

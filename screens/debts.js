@@ -1,5 +1,5 @@
 import { addDebt, debtRemaining, deleteDebt, parseAmount, repay, round2 } from '../logic.js';
-import { $, esc, fmt, openForm, today, walletOptions, warnIfNegative } from '../ui.js';
+import { $, ask, esc, fmt, openForm, today, walletOptions, warnIfNegative } from '../ui.js';
 
 const TITLE = { owedToMe: 'People who owe me', iOwe: 'People I owe' };
 const BAD_AMOUNT = 'Enter an amount above 0 (at most 2 decimals).';
@@ -77,9 +77,9 @@ function edit(ctx, debt) {
       ctx.commit();
     },
     '<button type="button" class="danger" data-del>Delete</button>');
-  $('[data-del]', form).addEventListener('click', () => {
+  $('[data-del]', form).addEventListener('click', async () => {
     const linked = ctx.state.entries.some(e => e.debtId === debt.id);
-    if (!confirm(linked ? 'Delete this debt? Its money entries stay in History.' : 'Delete this debt?')) return;
+    if (!(await ask(linked ? 'Delete this debt? Its money entries stay in History.' : 'Delete this debt?'))) return;
     deleteDebt(ctx.state, debt.id);
     $('#dlg').close();
     ctx.commit();
