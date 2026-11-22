@@ -3,11 +3,13 @@ import { $ } from './ui.js';
 import home from './screens/home.js';
 import history from './screens/history.js';
 import debts from './screens/debts.js';
+import todo from './screens/todo.js';
 
 const tabs = [
   ['home', 'Home', home],
   ['history', 'History', history],
   ['debts', 'Debts', debts],
+  ['todo', 'To-do', todo],
 ];
 let current = 'home';
 
