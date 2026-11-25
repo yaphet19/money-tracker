@@ -174,6 +174,56 @@ test('goalProgress: percent, what is left, per day, done', () => {
   assert.equal(L.goalProgress(-500, { name: 'x', amount: 1000, by: null }, '2026-11-22').pct, 0);
 });
 
+test('dueSoon: debts I owe that are late or due within N days, soonest first', () => {
+  const s = st();
+  L.addDebt(s, { direction: 'iOwe', person: 'Dawit', amount: 1000, date: '2026-11-10', dueDate: '2026-11-21', moveMoney: false });
+  L.addDebt(s, { direction: 'iOwe', person: 'Sara', amount: 200, date: '2026-11-10', dueDate: '2026-11-24', moveMoney: false });
+  L.addDebt(s, { direction: 'iOwe', person: 'Later', amount: 50, date: '2026-11-10', dueDate: '2026-12-30', moveMoney: false });
+  L.addDebt(s, { direction: 'owedToMe', person: 'NotMine', amount: 70, date: '2026-11-10', dueDate: '2026-11-23', moveMoney: false });
+  assert.deepEqual(L.dueSoon(s, '2026-11-22', 7).map(x => [x.person, x.left, x.days]), [['Dawit', 1000, -1], ['Sara', 200, 2]]);
+});
+
+test('lastPaid finds the newest spending with the same name', () => {
+  const entries = [
+    e({ type: 'out', amount: 1200, wallet: 'cash', person: 'Sunglasses', date: '2026-05-01' }),
+    e({ type: 'out', amount: 1300, wallet: 'cash', note: 'sunglasses', date: '2026-08-01' }),
+    e({ type: 'in', amount: 9, wallet: 'cash', person: 'Sunglasses', date: '2026-09-01' }),
+  ];
+  assert.deepEqual(L.lastPaid(entries, ' SUNGLASSES '), { amount: 1300, date: '2026-08-01' });
+  assert.equal(L.lastPaid(entries, 'Hat'), null);
+  assert.equal(L.lastPaid(entries, ''), null);
+});
+
+test('buyCheck: good buy, think twice, not now', () => {
+  const s = st(); s.start = { cash: 10000, telebirr: 8000 };
+  const good = L.buyCheck(s, 500, 100, '2026-11-22');
+  assert.equal(good.verdict, 'good');
+  assert.equal(good.pct, 3);
+  assert.equal(good.perUse, 5);
+  assert.equal(good.wallet, 'cash');
+  s.limit = 1000;
+  const overLimit = L.buyCheck(s, 1500, 200, '2026-11-22');
+  assert.equal(overLimit.verdict, 'think');
+  assert.equal(overLimit.limitLeft, -500);
+  assert.equal(L.buyCheck(s, 6000, 0, '2026-11-22').verdict, 'no'); // over 30% of 18,000
+  s.limit = null;
+  assert.equal(L.buyCheck(s, 500, 2, '2026-11-22').verdict, 'think'); // 250 a use
+});
+
+test('buyCheck: due-soon debts, days of work, goal delay', () => {
+  const s = st(); s.start = { cash: 5000, telebirr: 0 };
+  s.entries.push(e({ type: 'in', amount: 9000, wallet: 'cash', date: '2026-10-01' })); // 9,000 in 90 days = 100 a day
+  L.addDebt(s, { direction: 'iOwe', person: 'Dawit', amount: 13500, date: '2026-11-01', dueDate: '2026-11-25', moveMoney: false });
+  const r = L.buyCheck(s, 600, 0, '2026-11-22');
+  assert.equal(r.verdict, 'no'); // 14,000 - 600 = 13,400 can't cover the 13,500 due in 3 days
+  assert.equal(r.dueSoonTotal, 13500);
+  assert.equal(L.buyCheck(s, 400, 0, '2026-11-22').verdict, 'good'); // 13,600 still covers it
+  assert.equal(r.daysOfWork, 6);
+  s.goal = { name: 'Laptop', amount: 20000, by: '2026-12-22' }; // 6,000 left over 30 days = 200 a day
+  s.debts = [];
+  assert.equal(L.buyCheck(s, 600, 0, '2026-11-22').goalDays, 3);
+});
+
 test('isValidBackup', () => {
   assert.equal(L.isValidBackup(L.emptyState()), true);
   assert.equal(L.isValidBackup(null), false);

@@ -1,8 +1,8 @@
-:root { --bg:#f4f5f7; --card:#fff; --text:#1c1f24; --muted:#6b7280; --line:#e5e7eb; --accent:#0f766e; --pos:#15803d; --neg:#b91c1c; --pos-bg:#e8f5ec; --neg-bg:#fdecec; --soon:#b45309; color-scheme: light; }
+:root { --bg:#f4f5f7; --card:#fff; --text:#1c1f24; --muted:#6b7280; --line:#e5e7eb; --accent:#0f766e; --pos:#15803d; --neg:#b91c1c; --pos-bg:#e8f5ec; --neg-bg:#fdecec; --soon:#b45309; --soon-bg:#fdf3e1; color-scheme: light; }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --bg:#0f1115; --card:#1a1d23; --text:#eef0f3; --muted:#9aa1ac; --line:#2a2f37; --accent:#14b8a6; --pos:#4ade80; --neg:#f87171; --pos-bg:#16301f; --neg-bg:#3a1a1a; --soon:#fbbf24; color-scheme: dark; }
+  :root:not([data-theme="light"]) { --bg:#0f1115; --card:#1a1d23; --text:#eef0f3; --muted:#9aa1ac; --line:#2a2f37; --accent:#14b8a6; --pos:#4ade80; --neg:#f87171; --pos-bg:#16301f; --neg-bg:#3a1a1a; --soon:#fbbf24; --soon-bg:#3a2a10; color-scheme: dark; }
 }
-:root[data-theme="dark"] { --bg:#0f1115; --card:#1a1d23; --text:#eef0f3; --muted:#9aa1ac; --line:#2a2f37; --accent:#14b8a6; --pos:#4ade80; --neg:#f87171; --pos-bg:#16301f; --neg-bg:#3a1a1a; --soon:#fbbf24; color-scheme: dark; }
+:root[data-theme="dark"] { --bg:#0f1115; --card:#1a1d23; --text:#eef0f3; --muted:#9aa1ac; --line:#2a2f37; --accent:#14b8a6; --pos:#4ade80; --neg:#f87171; --pos-bg:#16301f; --neg-bg:#3a1a1a; --soon:#fbbf24; --soon-bg:#3a2a10; color-scheme: dark; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; } /* `label { display: block }` would otherwise un-hide hidden labels */
 body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.4 -apple-system, system-ui, sans-serif; }
@@ -35,6 +35,15 @@ small.soon { color: var(--soon); }
 .check .result { margin: 6px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--bg); color: var(--muted); }
 .check .result.ok { background: var(--pos-bg); color: var(--pos); }
 .check .result.no { background: var(--neg-bg); color: var(--neg); }
+.check .result.warn { background: var(--soon-bg); color: var(--soon); }
+.check .result strong { font-size: 17px; }
+.check .result ul { list-style: none; margin: 6px 0 10px; padding: 0; display: grid; gap: 4px; font-size: 14px; }
+.check .result li.yes { color: var(--pos); }
+.check .result li.no { color: var(--neg); }
+.check .result li.info { color: var(--text); }
+.check .result button { color: var(--text); }
+.paysoon { border: 2px solid var(--soon); }
+.paysoon.late { border-color: var(--neg); }
 .quick { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
 .chip { border-radius: 999px; padding: 8px 14px; gap: 6px; font-size: 15px; }
 .chip.in strong { color: var(--pos); }

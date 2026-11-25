@@ -5,9 +5,9 @@ import { $, ask, esc, openForm, today, walletOptions, warn } from '../ui.js';
 const TITLES = { in: 'Got money', out: 'Spent / lost money', move: 'Move money' };
 
 // type: 'in' | 'out' | 'move'. Pass `entry` to edit it (adds a Delete button), or `prefill` to start
-// a new one with values filled in (a quick button).
+// a new one with values filled in (a quick button). `onSaved` runs right before the save is committed.
 // shortcut: editing a loan entry's amount does not re-check its debt; fine for one careful user.
-export function openEntryForm(ctx, type, entry, prefill = {}) {
+export function openEntryForm(ctx, type, entry, prefill = {}, onSaved) {
   const e = entry || { type, date: today(), wallet: 'cash', from: 'cash', to: 'telebirr', person: '', note: '', ...prefill };
   const canSaveQuick = !entry && e.type !== 'move';
   const walletFields = e.type === 'move'
@@ -33,6 +33,7 @@ export function openEntryForm(ctx, type, entry, prefill = {}) {
       if (canSaveQuick && fd.get('quick') === 'on') {
         ctx.state.quick.push({ id: uid(), type: e.type, amount, wallet: next.wallet, person: next.person, note: next.note });
       }
+      onSaved?.();
       warn(ctx.state, { spending: e.type === 'out' && !e.debtId });
       ctx.commit();
     },

@@ -1,4 +1,4 @@
-import { balances, dailyTotals, debtRemaining, debtTotals, goalProgress, limitStatus, periodStart, periodTotals, round2 } from '../logic.js';
+import { balances, dailyTotals, debtRemaining, debtTotals, dueSoon, goalProgress, limitStatus, periodStart, periodTotals, round2 } from '../logic.js';
 import { locale, t } from '../i18n.js';
 import { dueText, esc, fmt, signed, today, WALLETS } from '../ui.js';
 import { openEntryForm } from './entry-form.js';
@@ -30,6 +30,16 @@ function openDebtsList(state, direction) {
 
 const quickRow = state => state.quick.length ? `<div class="quick">${state.quick.map(q =>
   `<button data-quick="${q.id}" class="chip ${q.type}"><strong>${q.type === 'in' ? '+' : '−'}${fmt(q.amount)}</strong> ${esc(q.person || q.note)}</button>`).join('')}</div>` : '';
+
+// Debts I owe that are late or due within 3 days, at the top of Home so they can't be missed.
+function paySoonCard(state) {
+  const soon = dueSoon(state, today(), 3);
+  if (!soon.length) return '';
+  return `<section class="card paysoon ${soon.some(d => d.days < 0) ? 'late' : ''}">
+    <h3>${t('Pay soon')}</h3>
+    <ul class="list">${soon.map(d => `<li><span>${esc(d.person)}<br>${dueText(d.dueDate)}</span><strong>${fmt(d.left)}</strong></li>`).join('')}</ul>
+  </section>`;
+}
 
 const bar = pct => `<div class="bar" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><span style="width:${pct}%"></span></div>`;
 
@@ -105,6 +115,7 @@ export default {
         }).join('')}
         <small class="today-note">${t('− and + are today')}</small>
       </section>
+      ${paySoonCard(state)}
       ${quickRow(state)}
       ${limitCard(state)}
       ${goalCard(state, b.total)}

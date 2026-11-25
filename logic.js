@@ -6,7 +6,7 @@ export const ymd = d =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 // Fills fields added after the first version, so older saves and backups keep working.
-export const withDefaults = s => ({ goal: null, limit: null, quick: [], lang: 'en', ...s });
+export const withDefaults = s => ({ goal: null, limit: null, quick: [], wishlist: [], lang: 'en', ...s });
 
 export const emptyState = () => withDefaults({
   version: 1,
@@ -123,6 +123,56 @@ export function borrowCheck(state, amount, by) {
   const have = round2(balances(state).total + incoming);
   const need = round2(amount + outgoing);
   return { ok: have >= need, have, need, incoming: round2(incoming), outgoing: round2(outgoing), short: round2(need - have) };
+}
+
+// Debts I owe that are late or due within `days`, soonest first. `days` < 0 means late.
+export function dueSoon(state, today, days = 7) {
+  return state.debts
+    .filter(d => d.direction === 'iOwe' && d.dueDate)
+    .map(d => ({ person: d.person, left: debtRemaining(d, state.entries), days: daysUntil(d.dueDate, today), dueDate: d.dueDate }))
+    .filter(d => d.left > 0 && d.days <= days)
+    .sort((a, b) => a.days - b.days);
+}
+
+// Newest money-out entry whose person or note is `name` (any case).
+export function lastPaid(entries, name) {
+  const want = String(name).trim().toLowerCase();
+  if (!want) return null;
+  const hits = entries.filter(e => e.type === 'out' && [e.person, e.note].some(x => (x || '').trim().toLowerCase() === want));
+  if (!hits.length) return null;
+  const last = hits.reduce((a, b) => (b.date >= a.date ? b : a));
+  return { amount: last.amount, date: last.date };
+}
+
+// "Should I buy it?" It judges only against my own money, not the item.
+//   no:    I couldn't cover what I owe afterwards, it's over 30% of my money, or debts due within 7 days wouldn't be covered
+//   think: over my monthly limit, over 10% of my money, or over 50 birr per use
+//   good:  otherwise
+export function buyCheck(state, price, uses, today) {
+  const b = balances(state);
+  const owe = debtTotals(state).iOwe;
+  const pct = b.total > 0 ? Math.round((price / b.total) * 100) : Infinity;
+  const afterDebts = round2(b.total - price - owe);
+  const spent = periodTotals(state.entries, periodStart('month', today), today).out;
+  const limitLeft = state.limit ? round2(state.limit - spent - price) : null;
+  const perUse = uses > 0 ? round2(price / uses) : null;
+  const soon = dueSoon(state, today, 7);
+  const dueSoonTotal = round2(soon.reduce((s, d) => s + d.left, 0));
+  const g = state.goal && goalProgress(b.total, state.goal, today);
+  const goalDays = g?.perDay ? Math.ceil(price / g.perDay) : null;
+  const from = new Date(today + 'T00:00:00');
+  from.setDate(from.getDate() - 89);
+  const income90 = periodTotals(state.entries, ymd(from), today).in;
+  const daysOfWork = income90 > 0 ? Math.round((price / (income90 / 90)) * 10) / 10 : null;
+  const wallet = b.cash >= b.telebirr ? 'cash' : 'telebirr';
+
+  const no = afterDebts < 0 || pct > 30 || (dueSoonTotal > 0 && b.total - price < dueSoonTotal);
+  const think = (limitLeft !== null && limitLeft < 0) || pct > 10 || (perUse !== null && perUse > 50);
+  return {
+    verdict: no ? 'no' : think ? 'think' : 'good',
+    total: b.total, pct, owe, afterDebts, limitLeft, perUse, soon, dueSoonTotal, goalDays, daysOfWork,
+    wallet, walletEnough: b[wallet] >= price, saveDaily: Math.ceil(price / 30),
+  };
 }
 
 let counter = 0;
