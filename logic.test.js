@@ -137,6 +137,43 @@ test('borrowCheck: counts money due to me by then, and what I owe by then or wit
   assert.equal(L.borrowCheck(s, 4800, '2026-12-20').ok, true);
 });
 
+test('withDefaults fills new fields for old saves and keeps existing ones', () => {
+  const old = { version: 1, start: { cash: 0, telebirr: 0 }, entries: [], debts: [], todos: [], lastBackup: null };
+  const s = L.withDefaults(old);
+  assert.deepEqual([s.goal, s.limit, s.quick, s.lang], [null, null, [], 'en']);
+  assert.equal(L.withDefaults({ ...old, lang: 'am', limit: 5000 }).limit, 5000);
+  assert.equal(L.emptyState().lang, 'en');
+});
+
+test('dailyTotals: last 7 days oldest first, loans and moves left out', () => {
+  const days = L.dailyTotals([
+    e({ type: 'in', amount: 355, wallet: 'cash' }),
+    e({ type: 'out', amount: 120, wallet: 'cash', date: '2026-11-20' }),
+    e({ type: 'in', amount: 500, wallet: 'cash', debtId: 'd1' }),
+    e({ type: 'move', amount: 99, from: 'cash', to: 'telebirr' }),
+    e({ type: 'in', amount: 1, wallet: 'cash', date: '2026-11-15' }), // 8 days ago: outside
+  ], '2026-11-22');
+  assert.equal(days.length, 7);
+  assert.equal(days[0].date, '2026-11-16');
+  assert.deepEqual(days[6], { date: '2026-11-22', in: 355, out: 0 });
+  assert.deepEqual(days[4], { date: '2026-11-20', in: 0, out: 120 });
+});
+
+test('limitStatus: ok, near (80%+), over', () => {
+  assert.deepEqual(L.limitStatus(3000, 10000), { pct: 30, left: 7000, level: 'ok' });
+  assert.equal(L.limitStatus(8000, 10000).level, 'near');
+  assert.equal(L.limitStatus(10000, 10000).level, 'near');
+  assert.deepEqual(L.limitStatus(12000, 10000), { pct: 120, left: -2000, level: 'over' });
+});
+
+test('goalProgress: percent, what is left, per day, done', () => {
+  assert.deepEqual(L.goalProgress(5000, { name: 'Laptop', amount: 20000, by: '2026-12-22' }, '2026-11-22'),
+    { pct: 25, left: 15000, daysLeft: 30, perDay: 500, done: false });
+  assert.deepEqual(L.goalProgress(25000, { name: 'x', amount: 20000, by: null }, '2026-11-22'),
+    { pct: 100, left: 0, daysLeft: null, perDay: null, done: true });
+  assert.equal(L.goalProgress(-500, { name: 'x', amount: 1000, by: null }, '2026-11-22').pct, 0);
+});
+
 test('isValidBackup', () => {
   assert.equal(L.isValidBackup(L.emptyState()), true);
   assert.equal(L.isValidBackup(null), false);

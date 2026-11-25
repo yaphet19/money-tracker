@@ -1,4 +1,5 @@
-import { emptyState, isValidBackup } from './logic.js';
+import { emptyState, isValidBackup, withDefaults } from './logic.js';
+import { t } from './i18n.js';
 import { notify } from './ui.js';
 
 const KEY = 'money-tracker-v1';
@@ -7,7 +8,7 @@ export function load() {
   let raw = null;
   try { raw = localStorage.getItem(KEY); } catch { notify('This browser blocks saving. Changes will be lost when you close it.'); }
   if (!raw) return emptyState();
-  try { const s = JSON.parse(raw); if (isValidBackup(s)) return s; } catch {}
+  try { const s = JSON.parse(raw); if (isValidBackup(s)) return withDefaults(s); } catch {}
   try { localStorage.setItem(`${KEY}-broken-${Date.now()}`, raw); } catch {} // never silently drop data we can't read
   notify('Saved data could not be read. It was kept aside. Restore a backup in Settings.');
   return emptyState();
@@ -38,6 +39,6 @@ export async function exportBackup(state, dateStr) {
 export async function readBackup(file) {
   let s;
   try { s = JSON.parse(await file.text()); } catch { s = null; }
-  if (!isValidBackup(s)) throw new Error('This is not a Money Tracker backup file.');
-  return s;
+  if (!isValidBackup(s)) throw new Error(t('This is not a Money Tracker backup file.'));
+  return withDefaults(s);
 }

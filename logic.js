@@ -5,7 +5,10 @@ export const round2 = n => Math.round(n * 100) / 100;
 export const ymd = d =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-export const emptyState = () => ({
+// Fills fields added after the first version, so older saves and backups keep working.
+export const withDefaults = s => ({ goal: null, limit: null, quick: [], lang: 'en', ...s });
+
+export const emptyState = () => withDefaults({
   version: 1,
   start: { cash: 0, telebirr: 0 },
   entries: [],
@@ -55,6 +58,34 @@ export function periodTotals(entries, from, to) {
   r.out = round2(r.out);
   r.net = round2(r.in - r.out);
   return r;
+}
+
+// Got and lost for each of the last `days` days ending `today`, oldest first (same rules as periodTotals).
+export function dailyTotals(entries, today, days = 7) {
+  const list = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today + 'T00:00:00');
+    d.setDate(d.getDate() - i);
+    const date = ymd(d);
+    const t = periodTotals(entries, date, date);
+    list.push({ date, in: t.in, out: t.out });
+  }
+  return list;
+}
+
+// Monthly spending limit: 'near' from 80% used, 'over' once past the limit.
+export function limitStatus(spent, limit) {
+  const level = spent > limit ? 'over' : spent >= 0.8 * limit ? 'near' : 'ok';
+  return { pct: Math.round((spent / limit) * 100), left: round2(limit - spent), level };
+}
+
+// Savings goal measured against the money I have now; perDay only when there is a date and something left.
+export function goalProgress(have, goal, today) {
+  const left = round2(Math.max(0, goal.amount - have));
+  const pct = Math.min(100, Math.max(0, Math.round((have / goal.amount) * 100)));
+  const daysLeft = goal.by ? daysUntil(goal.by, today) : null;
+  const perDay = left > 0 && daysLeft > 0 ? round2(left / daysLeft) : null;
+  return { pct, left, daysLeft, perDay, done: left === 0 };
 }
 
 // Repayments flow back: 'in' for owedToMe, 'out' for iOwe. The entry that opened the

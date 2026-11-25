@@ -1,19 +1,20 @@
+import { t } from '../i18n.js';
 import { esc, fmt, WALLETS } from '../ui.js';
 import { openEntryForm } from './entry-form.js';
 
 const SIGN = { in: '+', out: '−', move: '⇄ ' };
 
 const line = e => {
-  const where = e.type === 'move' ? `${WALLETS[e.from]} → ${WALLETS[e.to]}` : WALLETS[e.wallet];
+  const where = e.type === 'move' ? `${t(WALLETS[e.from])} → ${t(WALLETS[e.to])}` : t(WALLETS[e.wallet]);
   const extra = [e.person, e.note].filter(Boolean).map(esc).join(' · ');
   return `<li><button data-id="${e.id}" class="entry ${e.type}"><span>
-    <strong>${SIGN[e.type]}${fmt(e.amount)}</strong> ${e.debtId ? '<em class="tag">Loan</em>' : ''}
+    <strong>${SIGN[e.type]}${fmt(e.amount)}</strong> ${e.debtId ? `<em class="tag">${t('Loan')}</em>` : ''}
     <br><small>${where}${extra ? ' · ' + extra : ''}</small></span></button></li>`;
 };
 
 export default {
   html(state) {
-    if (!state.entries.length) return '<p class="muted center">No entries yet. Add one from Home.</p>';
+    if (!state.entries.length) return `<p class="muted center">${t('No entries yet. Add one from Home.')}</p>`;
     const byDay = {};
     // reverse first: the sort is stable, so the newest entry of each day ends up on top
     for (const e of [...state.entries].reverse().sort((a, b) => b.date.localeCompare(a.date))) (byDay[e.date] ||= []).push(e);

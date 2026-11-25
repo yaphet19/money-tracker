@@ -1,16 +1,17 @@
 import { addDebt, borrowCheck, debtRemaining, deleteDebt, lendCheck, parseAmount, repay, round2, ymd } from '../logic.js';
-import { $, ask, dueText, esc, fmt, openForm, today, walletOptions, warnIfNegative } from '../ui.js';
+import { t } from '../i18n.js';
+import { $, ask, dueText, esc, fmt, openForm, shortDate, today, walletOptions, warn } from '../ui.js';
 
 const TITLE = { owedToMe: 'People who owe me', iOwe: 'People I owe' };
-const BAD_AMOUNT = 'Enter an amount above 0 (at most 2 decimals).';
+const badAmount = () => t('Enter an amount above 0 (at most 2 decimals).');
 
 function row(d, left) {
   return `<li class="debt"><div>
-      <strong>${esc(d.person)}</strong> ${fmt(left)}${left !== d.amount ? ` <small>of ${fmt(d.amount)}</small>` : ''}
-      ${d.note ? `<br><small>${esc(d.note)}</small>` : ''}<br><small>since ${d.createdDate}</small>
+      <strong>${esc(d.person)}</strong> ${fmt(left)}${left !== d.amount ? ` <small>${t('of {n}', { n: fmt(d.amount) })}</small>` : ''}
+      ${d.note ? `<br><small>${esc(d.note)}</small>` : ''}<br><small>${t('since {date}', { date: d.createdDate })}</small>
       ${left > 0 && d.dueDate ? `<br>${dueText(d.dueDate)}` : ''}
     </div><div class="row">
-      ${left > 0 ? `<button data-pay="${d.id}" class="primary">Paid</button>` : ''}<button data-edit="${d.id}">Edit</button>
+      ${left > 0 ? `<button data-pay="${d.id}" class="primary">${t('Paid')}</button>` : ''}<button data-edit="${d.id}">${t('Edit')}</button>
     </div></li>`;
 }
 
@@ -20,24 +21,24 @@ function section(state, dir) {
   const open = list.filter(([, left]) => left > 0).sort(([a], [b]) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999'));
   const settled = list.filter(([, left]) => left <= 0);
   const total = round2(open.reduce((s, [, left]) => s + left, 0));
-  return `<section class="card"><h3>${TITLE[dir]} <span>${fmt(total)}</span></h3>
-    <ul class="list">${open.map(([d, left]) => row(d, left)).join('') || '<li class="muted">None</li>'}</ul>
-    ${settled.length ? `<details><summary>Settled (${settled.length})</summary><ul class="list">${settled.map(([d, left]) => row(d, left)).join('')}</ul></details>` : ''}
-    <button data-new="${dir}">+ Add</button></section>`;
+  return `<section class="card"><h3>${t(TITLE[dir])} <span>${fmt(total)}</span></h3>
+    <ul class="list">${open.map(([d, left]) => row(d, left)).join('') || `<li class="muted">${t('None')}</li>`}</ul>
+    ${settled.length ? `<details><summary>${t('Settled ({n})', { n: settled.length })}</summary><ul class="list">${settled.map(([d, left]) => row(d, left)).join('')}</ul></details>` : ''}
+    <button data-new="${dir}">${t('+ Add')}</button></section>`;
 }
 
 let checkMode = 'lend';
 const inDays = n => { const d = new Date(); d.setDate(d.getDate() + n); return ymd(d); };
-const shortDate = s => new Date(s + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+const checkLabel = () => (checkMode === 'lend' ? t('Someone asks to borrow') : t('I want to borrow'));
 
 const checkCard = () => `<section class="card check">
-  <h3>Can I…?</h3>
+  <h3>${t('Can I…?')}</h3>
   <div class="seg">
-    <button type="button" data-mode="lend" aria-pressed="${checkMode === 'lend'}">Lend</button>
-    <button type="button" data-mode="borrow" aria-pressed="${checkMode === 'borrow'}">Borrow</button>
+    <button type="button" data-mode="lend" aria-pressed="${checkMode === 'lend'}">${t('Lend')}</button>
+    <button type="button" data-mode="borrow" aria-pressed="${checkMode === 'borrow'}">${t('Borrow')}</button>
   </div>
-  <label><span class="check-label">${checkMode === 'lend' ? 'Someone asks to borrow' : 'I want to borrow'}</span> <input name="checkAmount" inputmode="decimal" autocomplete="off" placeholder="2,000"></label>
-  <label ${checkMode === 'lend' ? 'hidden' : ''}>Pay back by <input name="checkBy" type="date" value="${inDays(30)}"></label>
+  <label><span class="check-label">${checkLabel()}</span> <input name="checkAmount" inputmode="decimal" autocomplete="off" placeholder="2,000"></label>
+  <label ${checkMode === 'lend' ? 'hidden' : ''}>${t('Pay back by')} <input name="checkBy" type="date" value="${inDays(30)}"></label>
   <p class="result" aria-live="polite"></p>
 </section>`;
 
@@ -46,59 +47,63 @@ function updateCheck(root, state) {
   const out = root.querySelector('.check .result');
   const amount = parseAmount(root.querySelector('[name=checkAmount]').value);
   out.className = 'result';
-  if (!amount) { out.textContent = 'Type an amount to check.'; return; }
+  if (!amount) { out.textContent = t('Type an amount to check.'); return; }
   if (checkMode === 'lend') {
     const r = lendCheck(state, amount);
+    const vars = { after: fmt(r.total - amount), left: fmt(r.left), owe: fmt(r.owe), short: fmt(-r.left) };
     out.classList.add(r.ok ? 'ok' : 'no');
     out.textContent = r.ok
-      ? `Yes. You'd have ${fmt(r.total - amount)} left, and ${fmt(r.left)} after paying what you owe (${fmt(r.owe)}).`
-      : `Not safe. You'd have ${fmt(r.total - amount)} left but you owe ${fmt(r.owe)}. Short by ${fmt(-r.left)}.`;
+      ? t("Yes. You'd have {after} left, and {left} after paying what you owe ({owe}).", vars)
+      : t("Not safe. You'd have {after} left but you owe {owe}. Short by {short}.", vars);
     return;
   }
   const by = root.querySelector('[name=checkBy]').value;
-  if (!by) { out.textContent = 'Pick the pay-back date.'; return; }
+  if (!by) { out.textContent = t('Pick the pay-back date.'); return; }
   const r = borrowCheck(state, amount, by);
-  const incoming = r.incoming ? ` (with ${fmt(r.incoming)} people owe you by then)` : '';
-  const owing = r.outgoing ? ` (with ${fmt(r.outgoing)} you already owe)` : '';
+  const vars = {
+    date: shortDate(by), have: fmt(r.have), need: fmt(r.need), short: fmt(r.short),
+    incoming: r.incoming ? t(' (with {n} people owe you by then)', { n: fmt(r.incoming) }) : '',
+    owing: r.outgoing ? t(' (with {n} you already owe)', { n: fmt(r.outgoing) }) : '',
+  };
   out.classList.add(r.ok ? 'ok' : 'no');
   out.textContent = r.ok
-    ? `Yes. By ${shortDate(by)} you'd have ${fmt(r.have)}${incoming} and need ${fmt(r.need)}${owing}.`
-    : `Risky. By ${shortDate(by)} you'd have ${fmt(r.have)}${incoming} but need ${fmt(r.need)}${owing}. Short by ${fmt(r.short)}.`;
+    ? t("Yes. By {date} you'd have {have}{incoming} and need {need}{owing}.", vars)
+    : t("Risky. By {date} you'd have {have}{incoming} but need {need}{owing}. Short by {short}.", vars);
 }
 
 function newDebt(ctx, direction) {
   const owed = direction === 'owedToMe';
-  openForm(owed ? 'Someone owes me' : 'I owe someone', `
-    <label>Person <input name="person" required autocomplete="off"></label>
-    <label>Amount (birr) <input name="amount" inputmode="decimal" required autocomplete="off"></label>
-    <label>Note <input name="note" autocomplete="off"></label>
-    <label class="check"><input type="checkbox" name="move" checked> ${owed ? 'Money left my wallet' : 'Money entered my wallet'}</label>
-    <label>Wallet <select name="wallet">${walletOptions('cash')}</select></label>
-    <label>Date <input name="date" type="date" required value="${today()}"></label>
-    <label>${owed ? 'They pay me back by' : 'I pay back by'} (optional) <input name="due" type="date"></label>`,
+  openForm(owed ? t('Someone owes me') : t('I owe someone'), `
+    <label>${t('Person')} <input name="person" required autocomplete="off"></label>
+    <label>${t('Amount (birr)')} <input name="amount" inputmode="decimal" required autocomplete="off"></label>
+    <label>${t('Note')} <input name="note" autocomplete="off"></label>
+    <label class="check"><input type="checkbox" name="move" checked> ${owed ? t('Money left my wallet') : t('Money entered my wallet')}</label>
+    <label>${t('Wallet')} <select name="wallet">${walletOptions('cash')}</select></label>
+    <label>${t('Date')} <input name="date" type="date" required value="${today()}"></label>
+    <label>${owed ? t('They pay me back by (optional)') : t('I pay back by (optional)')} <input name="due" type="date"></label>`,
     fd => {
       const amount = parseAmount(fd.get('amount'));
-      if (!amount) return BAD_AMOUNT;
+      if (!amount) return badAmount();
       const person = fd.get('person').trim();
-      if (!person) return 'Enter a name.';
+      if (!person) return t('Enter a name.');
       addDebt(ctx.state, { direction, person, amount, note: fd.get('note').trim(), date: fd.get('date'), dueDate: fd.get('due') || null, moveMoney: fd.get('move') === 'on', wallet: fd.get('wallet') });
-      warnIfNegative(ctx.state);
+      warn(ctx.state);
       ctx.commit();
     });
 }
 
 function pay(ctx, debt) {
   const left = debtRemaining(debt, ctx.state.entries);
-  openForm(debt.direction === 'owedToMe' ? `${debt.person} paid me back` : `I paid ${debt.person} back`, `
-    <label>Amount (left: ${fmt(left)}) <input name="amount" inputmode="decimal" required value="${left}" autocomplete="off"></label>
-    <label>Wallet <select name="wallet">${walletOptions('cash')}</select></label>
-    <label>Date <input name="date" type="date" required value="${today()}"></label>`,
+  openForm(debt.direction === 'owedToMe' ? t('{person} paid me back', { person: debt.person }) : t('I paid {person} back', { person: debt.person }), `
+    <label>${t('Amount (left: {n})', { n: fmt(left) })} <input name="amount" inputmode="decimal" required value="${left}" autocomplete="off"></label>
+    <label>${t('Wallet')} <select name="wallet">${walletOptions('cash')}</select></label>
+    <label>${t('Date')} <input name="date" type="date" required value="${today()}"></label>`,
     fd => {
       const amount = parseAmount(fd.get('amount'));
-      if (!amount) return BAD_AMOUNT;
+      if (!amount) return badAmount();
       try { repay(ctx.state, debt.id, { amount, wallet: fd.get('wallet'), date: fd.get('date') }); }
-      catch (err) { return `${err.message} (left: ${fmt(left)}).`; }
-      warnIfNegative(ctx.state);
+      catch (err) { return t('{msg} (left: {n}).', { msg: t(err.message), n: fmt(left) }); }
+      warn(ctx.state);
       ctx.commit();
     });
 }
@@ -106,24 +111,24 @@ function pay(ctx, debt) {
 // shortcut: changing the amount does not change the opening wallet entry; fix that entry in History if needed.
 function edit(ctx, debt) {
   const paid = round2(debt.amount - debtRemaining(debt, ctx.state.entries));
-  const form = openForm('Edit debt', `
-    <label>Person <input name="person" required value="${esc(debt.person)}" autocomplete="off"></label>
-    <label>Amount (birr) <input name="amount" inputmode="decimal" required value="${debt.amount}" autocomplete="off"></label>
-    <label>Note <input name="note" value="${esc(debt.note)}" autocomplete="off"></label>
-    <label>Pay back by (optional) <input name="due" type="date" value="${debt.dueDate || ''}"></label>`,
+  const form = openForm(t('Edit debt'), `
+    <label>${t('Person')} <input name="person" required value="${esc(debt.person)}" autocomplete="off"></label>
+    <label>${t('Amount (birr)')} <input name="amount" inputmode="decimal" required value="${debt.amount}" autocomplete="off"></label>
+    <label>${t('Note')} <input name="note" value="${esc(debt.note)}" autocomplete="off"></label>
+    <label>${t('Pay back by (optional)')} <input name="due" type="date" value="${debt.dueDate || ''}"></label>`,
     fd => {
       const amount = parseAmount(fd.get('amount'));
-      if (!amount) return BAD_AMOUNT;
-      if (amount < paid) return `${fmt(paid)} is already paid back, so the amount can't be less.`;
+      if (!amount) return badAmount();
+      if (amount < paid) return t("{n} is already paid back, so the amount can't be less.", { n: fmt(paid) });
       const person = fd.get('person').trim();
-      if (!person) return 'Enter a name.';
+      if (!person) return t('Enter a name.');
       Object.assign(debt, { person, amount, note: fd.get('note').trim(), dueDate: fd.get('due') || null });
       ctx.commit();
     },
-    '<button type="button" class="danger" data-del>Delete</button>');
+    `<button type="button" class="danger" data-del>${t('Delete')}</button>`);
   $('[data-del]', form).addEventListener('click', async () => {
     const linked = ctx.state.entries.some(e => e.debtId === debt.id);
-    if (!(await ask(linked ? 'Delete this debt? Its money entries stay in History.' : 'Delete this debt?'))) return;
+    if (!(await ask(linked ? t('Delete this debt? Its money entries stay in History.') : t('Delete this debt?')))) return;
     deleteDebt(ctx.state, debt.id);
     $('#dlg').close();
     ctx.commit();
@@ -142,7 +147,7 @@ export default {
         checkMode = b.dataset.mode;
         root.querySelectorAll('[data-mode]').forEach(x => x.setAttribute('aria-pressed', x === b));
         root.querySelector('[name=checkBy]').closest('label').hidden = checkMode === 'lend';
-        root.querySelector('.check-label').textContent = checkMode === 'lend' ? 'Someone asks to borrow' : 'I want to borrow';
+        root.querySelector('.check-label').textContent = checkLabel();
         updateCheck(root, ctx.state);
       }
       const find = id => ctx.state.debts.find(d => d.id === id);

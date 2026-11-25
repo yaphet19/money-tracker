@@ -1,18 +1,19 @@
 import { uid } from '../logic.js';
+import { t } from '../i18n.js';
 import { ask, esc, today } from '../ui.js';
 
-const item = t => `<li class="todo">
-  <label><input type="checkbox" data-toggle="${t.id}" ${t.doneDate ? 'checked' : ''}>
-    <span>${esc(t.text)}${t.doneDate ? `<br><small>done ${t.doneDate}</small>` : ''}</span></label>
-  <button data-del="${t.id}" aria-label="Delete">✕</button></li>`;
+const item = x => `<li class="todo">
+  <label><input type="checkbox" data-toggle="${x.id}" ${x.doneDate ? 'checked' : ''}>
+    <span>${esc(x.text)}${x.doneDate ? `<br><small>${t('done {date}', { date: x.doneDate })}</small>` : ''}</span></label>
+  <button data-del="${x.id}" aria-label="${t('Delete')}">✕</button></li>`;
 
 export default {
   html(state) {
-    const open = state.todos.filter(t => !t.doneDate);
-    const done = state.todos.filter(t => t.doneDate).sort((a, b) => b.doneDate.localeCompare(a.doneDate));
-    return `<form class="card add"><input name="text" placeholder="Something to do…" required autocomplete="off" aria-label="New to-do"><button class="primary">Add</button></form>
-      <section class="card"><h3>To do <span>${open.length}</span></h3><ul class="list">${open.map(item).join('') || '<li class="muted">All done</li>'}</ul></section>
-      <section class="card"><h3>Done <span>${done.length}</span></h3><ul class="list">${done.map(item).join('') || '<li class="muted">Nothing yet</li>'}</ul></section>`;
+    const open = state.todos.filter(x => !x.doneDate);
+    const done = state.todos.filter(x => x.doneDate).sort((a, b) => b.doneDate.localeCompare(a.doneDate));
+    return `<form class="card add"><input name="text" placeholder="${t('Something to do…')}" required autocomplete="off" aria-label="${t('New to-do')}"><button class="primary">${t('Add')}</button></form>
+      <section class="card"><h3>${t('To do')} <span>${open.length}</span></h3><ul class="list">${open.map(item).join('') || `<li class="muted">${t('All done')}</li>`}</ul></section>
+      <section class="card"><h3>${t('Done')} <span>${done.length}</span></h3><ul class="list">${done.map(item).join('') || `<li class="muted">${t('Nothing yet')}</li>`}</ul></section>`;
   },
   bind(root, ctx) {
     root.querySelector('form.add').addEventListener('submit', ev => {
@@ -24,14 +25,14 @@ export default {
       root.ownerDocument.querySelector('form.add input').focus(); // keep the keyboard up for the next one
     });
     root.addEventListener('change', ev => {
-      const t = ctx.state.todos.find(x => x.id === ev.target.dataset.toggle);
-      if (!t) return;
-      t.doneDate = t.doneDate ? null : today();
+      const x = ctx.state.todos.find(y => y.id === ev.target.dataset.toggle);
+      if (!x) return;
+      x.doneDate = x.doneDate ? null : today();
       ctx.commit();
     });
     root.addEventListener('click', async ev => {
       const id = ev.target.closest('[data-del]')?.dataset.del;
-      if (!id || !(await ask('Delete this to-do?'))) return;
+      if (!id || !(await ask(t('Delete this to-do?')))) return;
       ctx.state.todos = ctx.state.todos.filter(x => x.id !== id);
       ctx.commit();
     });

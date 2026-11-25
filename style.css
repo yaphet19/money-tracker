@@ -35,6 +35,25 @@ small.soon { color: var(--soon); }
 .check .result { margin: 6px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--bg); color: var(--muted); }
 .check .result.ok { background: var(--pos-bg); color: var(--pos); }
 .check .result.no { background: var(--neg-bg); color: var(--neg); }
+.quick { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.chip { border-radius: 999px; padding: 8px 14px; gap: 6px; font-size: 15px; }
+.chip.in strong { color: var(--pos); }
+.chip.out strong { color: var(--neg); }
+.meter .bar { height: 10px; border-radius: 999px; background: var(--line); overflow: hidden; margin: 4px 0 8px; }
+.meter .bar span { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
+.meter.near .bar span { background: var(--soon); }
+.meter.over .bar span, .meter.over h3 small { background: var(--neg); color: var(--neg); }
+.meter.over h3 small { background: none; }
+.meter.goal.done .bar span { background: var(--pos); }
+.chart .bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; height: 130px; }
+.chart .day { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.chart .pair { flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 3px; border-bottom: 1px solid var(--line); }
+.chart .b { width: 38%; max-width: 14px; border-radius: 4px 4px 0 0; }
+.chart .b.got, .chart .key.got { background: var(--pos); }
+.chart .b.lost, .chart .key.lost { background: var(--neg); }
+.chart .day small { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.chart .legend { display: flex; gap: 14px; justify-content: center; margin-top: 8px; font-size: 13px; color: var(--muted); }
+.chart .key { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
 .period summary { list-style: none; cursor: pointer; color: var(--text); padding: 0; }
 .period summary::-webkit-details-marker { display: none; }
 .split { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: center; }
